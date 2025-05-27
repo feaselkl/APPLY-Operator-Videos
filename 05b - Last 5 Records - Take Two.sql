@@ -2,6 +2,29 @@
 /* What we want:  a view to see each customer's latest 5 invoices, including information
 		at the invoice line level. */
 
+/* Create appropriate indexes to make sure that we get the best performance out of each technique. */
+IF NOT EXISTS
+(
+	SELECT *
+	FROM sys.indexes i
+	WHERE
+		i.name = N'IX_InvoiceLines_InvoiceID'
+)
+BEGIN
+	CREATE NONCLUSTERED INDEX [IX_InvoiceLines_InvoiceID] ON Sales.InvoiceLines
+	(
+		InvoiceID ASC
+	)
+	INCLUDE
+	(
+		ExtendedPrice,
+		LineProfit,
+		Quantity,
+		TaxAmount
+	) WITH(DATA_COMPRESSION = PAGE);
+END
+GO
+
 /* Method 1:  correlated sub-query */
 SELECT
 	c.CustomerName,

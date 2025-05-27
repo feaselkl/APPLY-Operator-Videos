@@ -11,9 +11,9 @@
 	What they want BY MONTH:
 	- Revenue (sum of retail price * quantity sold)
 	- Net Sales (Revenue - sum of discounts)
-	- Cost of Sales (sum of unit cost * quantity sold)
+	- Cost of Goods Sold (sum of unit cost * quantity sold)
 	- Shipping Expenses (sum of shipping costs)
-	- Gross Profit (Net Sales - Cost of Sales)
+	- Gross Profit (Net Sales - Cost of Goods Sold)
 	- Gross Profit Margin (Gross Profit / Net Sales)
 	- Net Income (Gross Profit - Shipping Expenses)
 */
@@ -24,7 +24,7 @@
 SELECT
 	c.CalendarYear,
 	c.CalendarMonth,
-	SUM(LineProfit + (il.UnitPrice * il.Quantity)) AS Revenue
+	SUM(il.LineProfit + (il.UnitPrice * il.Quantity)) AS Revenue
 FROM Sales.Orders o
 	INNER JOIN Sales.Invoices i
 		ON i.OrderID = o.OrderID
@@ -78,7 +78,7 @@ ORDER BY
 	c.CalendarYear,
 	c.CalendarMonth;
 
--- Step 3:  Calculate Cost of Sales by month.
+-- Step 3:  Calculate Cost of Goods Sold by month.
 WITH orders AS
 (
 	SELECT
@@ -86,7 +86,7 @@ WITH orders AS
 		o.OrderDate,
 		SUM(il.LineProfit + (il.UnitPrice * il.Quantity)) AS Revenue,
 		-- Note the duplication here!
-		SUM(il.UnitPrice * il.Quantity) AS CostOfSales
+		SUM(il.UnitPrice * il.Quantity) AS CostOfGoodsSold
 	FROM Sales.Orders o
 		INNER JOIN Sales.Invoices i
 			ON i.OrderID = o.OrderID
@@ -99,7 +99,7 @@ WITH orders AS
 SELECT
 	c.CalendarYear,
 	c.CalendarMonth,
-	SUM(o.CostOfSales) AS CostOfSales,
+	SUM(o.CostOfGoodsSold) AS CostOfGoodsSold,
 	SUM(o.Revenue) AS Revenue,
 	SUM(CASE WHEN o.Revenue > 8000 THEN o.Revenue * 0.1 WHEN o.Revenue > 4000 THEN o.Revenue * 0.05 ELSE 0.0 END) AS DiscountAmount,
 	-- Note the duplication here!
@@ -124,7 +124,7 @@ WITH orders AS
 		o.OrderDate,
 		SUM(il.LineProfit + (il.UnitPrice * il.Quantity)) AS Revenue,
 		-- Note the duplication here!
-		SUM(il.UnitPrice * il.Quantity) AS CostOfSales,
+		SUM(il.UnitPrice * il.Quantity) AS CostOfGoodsSold,
 		SUM(il.Quantity * si.TypicalWeightPerUnit) AS TotalWeight
 	FROM Sales.Orders o
 		INNER JOIN Sales.Invoices i
@@ -140,7 +140,7 @@ WITH orders AS
 SELECT
 	c.CalendarYear,
 	c.CalendarMonth,
-	SUM(o.CostOfSales) AS CostOfSales,
+	SUM(o.CostOfGoodsSold) AS CostOfGoodsSold,
 	SUM(CASE WHEN o.TotalWeight <= 3 THEN 0.0 ELSE 5.0 + 0.2 * o.TotalWeight END) AS ShippingCost,
 	SUM(o.Revenue) AS Revenue,
 	SUM(CASE WHEN o.Revenue > 8000 THEN o.Revenue * 0.1 WHEN o.Revenue > 4000 THEN o.Revenue * 0.05 ELSE 0.0 END) AS DiscountAmount,
@@ -156,7 +156,7 @@ ORDER BY
 	c.CalendarYear,
 	c.CalendarMonth;
 
--- Step 5:  Calculate Gross Profit = Net Sales - Cost of Sales
+-- Step 5:  Calculate Gross Profit = Net Sales - Cost of Goods Sold
 WITH orders AS
 (
 	SELECT
@@ -164,7 +164,7 @@ WITH orders AS
 		o.OrderDate,
 		SUM(il.LineProfit + (il.UnitPrice * il.Quantity)) AS Revenue,
 		-- Note the duplication here!
-		SUM(il.UnitPrice * il.Quantity) AS CostOfSales,
+		SUM(il.UnitPrice * il.Quantity) AS CostOfGoodsSold,
 		SUM(il.Quantity * si.TypicalWeightPerUnit) AS TotalWeight
 	FROM Sales.Orders o
 		INNER JOIN Sales.Invoices i
@@ -180,14 +180,14 @@ WITH orders AS
 SELECT
 	c.CalendarYear,
 	c.CalendarMonth,
-	SUM(o.CostOfSales) AS CostOfSales,
+	SUM(o.CostOfGoodsSold) AS CostOfGoodsSold,
 	SUM(CASE WHEN o.TotalWeight <= 3 THEN 0.0 ELSE 5.0 + 0.2 * o.TotalWeight END) AS ShippingCost,
 	SUM(o.Revenue) AS Revenue,
 	SUM(CASE WHEN o.Revenue > 8000 THEN o.Revenue * 0.1 WHEN o.Revenue > 4000 THEN o.Revenue * 0.05 ELSE 0.0 END) AS DiscountAmount,
 	-- Note the duplication here!
 	SUM(o.Revenue - CASE WHEN o.Revenue > 8000 THEN o.Revenue * 0.1 WHEN o.Revenue > 4000 THEN o.Revenue * 0.05 ELSE 0.0 END) AS NetSales,
 	-- More duplication!
-	SUM(o.Revenue - CASE WHEN o.Revenue > 8000 THEN o.Revenue * 0.1 WHEN o.Revenue > 4000 THEN o.Revenue * 0.05 ELSE 0.0 END) - SUM(o.CostOfSales) AS GrossProfit
+	SUM(o.Revenue - CASE WHEN o.Revenue > 8000 THEN o.Revenue * 0.1 WHEN o.Revenue > 4000 THEN o.Revenue * 0.05 ELSE 0.0 END) - SUM(o.CostOfGoodsSold) AS GrossProfit
 FROM orders o
 	INNER JOIN dbo.Calendar c
 		ON o.OrderDate = c.Date
@@ -206,7 +206,7 @@ WITH orders AS
 		o.OrderDate,
 		SUM(il.LineProfit + (il.UnitPrice * il.Quantity)) AS Revenue,
 		-- Note the duplication here!
-		SUM(il.UnitPrice * il.Quantity) AS CostOfSales,
+		SUM(il.UnitPrice * il.Quantity) AS CostOfGoodsSold,
 		SUM(il.Quantity * si.TypicalWeightPerUnit) AS TotalWeight
 	FROM Sales.Orders o
 		INNER JOIN Sales.Invoices i
@@ -222,16 +222,16 @@ WITH orders AS
 SELECT
 	c.CalendarYear,
 	c.CalendarMonth,
-	SUM(o.CostOfSales) AS CostOfSales,
+	SUM(o.CostOfGoodsSold) AS CostOfGoodsSold,
 	SUM(CASE WHEN o.TotalWeight <= 3 THEN 0.0 ELSE 5.0 + 0.2 * o.TotalWeight END) AS ShippingCost,
 	SUM(o.Revenue) AS Revenue,
 	SUM(CASE WHEN o.Revenue > 8000 THEN o.Revenue * 0.1 WHEN o.Revenue > 4000 THEN o.Revenue * 0.05 ELSE 0.0 END) AS DiscountAmount,
 	-- Note the duplication here!
 	SUM(o.Revenue - CASE WHEN o.Revenue > 8000 THEN o.Revenue * 0.1 WHEN o.Revenue > 4000 THEN o.Revenue * 0.05 ELSE 0.0 END) AS NetSales,
 	-- More duplication!
-	SUM(o.Revenue - CASE WHEN o.Revenue > 8000 THEN o.Revenue * 0.1 WHEN o.Revenue > 4000 THEN o.Revenue * 0.05 ELSE 0.0 END) - SUM(o.CostOfSales) AS GrossProfit,
+	SUM(o.Revenue - CASE WHEN o.Revenue > 8000 THEN o.Revenue * 0.1 WHEN o.Revenue > 4000 THEN o.Revenue * 0.05 ELSE 0.0 END) - SUM(o.CostOfGoodsSold) AS GrossProfit,
 	-- Even more duplication and getting hard to read
-	(SUM(o.Revenue - CASE WHEN o.Revenue > 8000 THEN o.Revenue * 0.1 WHEN o.Revenue > 4000 THEN o.Revenue * 0.05 ELSE 0.0 END) - SUM(o.CostOfSales)) /
+	(SUM(o.Revenue - CASE WHEN o.Revenue > 8000 THEN o.Revenue * 0.1 WHEN o.Revenue > 4000 THEN o.Revenue * 0.05 ELSE 0.0 END) - SUM(o.CostOfGoodsSold)) /
 		SUM(o.Revenue - CASE WHEN o.Revenue > 8000 THEN o.Revenue * 0.1 WHEN o.Revenue > 4000 THEN o.Revenue * 0.05 ELSE 0.0 END) AS GrossProfitMargin
 FROM orders o
 	INNER JOIN dbo.Calendar c
@@ -251,7 +251,7 @@ WITH orders AS
 		o.OrderDate,
 		SUM(il.LineProfit + (il.UnitPrice * il.Quantity)) AS Revenue,
 		-- Note the duplication here!
-		SUM(il.UnitPrice * il.Quantity) AS CostOfSales,
+		SUM(il.UnitPrice * il.Quantity) AS CostOfGoodsSold,
 		SUM(il.Quantity * si.TypicalWeightPerUnit) AS TotalWeight
 	FROM Sales.Orders o
 		INNER JOIN Sales.Invoices i
@@ -267,18 +267,18 @@ WITH orders AS
 SELECT
 	c.CalendarYear,
 	c.CalendarMonth,
-	SUM(o.CostOfSales) AS CostOfSales,
+	SUM(o.CostOfGoodsSold) AS CostOfGoodsSold,
 	SUM(CASE WHEN o.TotalWeight <= 3 THEN 0.0 ELSE 5.0 + 0.2 * o.TotalWeight END) AS ShippingCost,
 	SUM(o.Revenue) AS Revenue,
 	SUM(CASE WHEN o.Revenue > 8000 THEN o.Revenue * 0.1 WHEN o.Revenue > 4000 THEN o.Revenue * 0.05 ELSE 0.0 END) AS DiscountAmount,
 	-- Note the duplication here!
 	SUM(o.Revenue - CASE WHEN o.Revenue > 8000 THEN o.Revenue * 0.1 WHEN o.Revenue > 4000 THEN o.Revenue * 0.05 ELSE 0.0 END) AS NetSales,
 	-- More duplication!
-	SUM(o.Revenue - CASE WHEN o.Revenue > 8000 THEN o.Revenue * 0.1 WHEN o.Revenue > 4000 THEN o.Revenue * 0.05 ELSE 0.0 END) - SUM(o.CostOfSales) AS GrossProfit,
+	SUM(o.Revenue - CASE WHEN o.Revenue > 8000 THEN o.Revenue * 0.1 WHEN o.Revenue > 4000 THEN o.Revenue * 0.05 ELSE 0.0 END) - SUM(o.CostOfGoodsSold) AS GrossProfit,
 	-- Even more duplication and getting hard to read
-	(SUM(o.Revenue - CASE WHEN o.Revenue > 8000 THEN o.Revenue * 0.1 WHEN o.Revenue > 4000 THEN o.Revenue * 0.05 ELSE 0.0 END) - SUM(o.CostOfSales)) /
+	(SUM(o.Revenue - CASE WHEN o.Revenue > 8000 THEN o.Revenue * 0.1 WHEN o.Revenue > 4000 THEN o.Revenue * 0.05 ELSE 0.0 END) - SUM(o.CostOfGoodsSold)) /
 		SUM(o.Revenue - CASE WHEN o.Revenue > 8000 THEN o.Revenue * 0.1 WHEN o.Revenue > 4000 THEN o.Revenue * 0.05 ELSE 0.0 END) AS GrossProfitMargin,
-	SUM(o.Revenue - CASE WHEN o.Revenue > 8000 THEN o.Revenue * 0.1 WHEN o.Revenue > 4000 THEN o.Revenue * 0.05 ELSE 0.0 END) - SUM(o.CostOfSales) - SUM(CASE WHEN o.TotalWeight <= 3 THEN 0.0 ELSE 5.0 + 0.2 * o.TotalWeight END) AS NetIncome
+	SUM(o.Revenue - CASE WHEN o.Revenue > 8000 THEN o.Revenue * 0.1 WHEN o.Revenue > 4000 THEN o.Revenue * 0.05 ELSE 0.0 END) - SUM(o.CostOfGoodsSold) - SUM(CASE WHEN o.TotalWeight <= 3 THEN 0.0 ELSE 5.0 + 0.2 * o.TotalWeight END) AS NetIncome
 FROM orders o
 	INNER JOIN dbo.Calendar c
 		ON o.OrderDate = c.Date
@@ -299,8 +299,8 @@ WITH orders AS
 		o.OrderID,
 		o.OrderDate,
 		SUM(il.LineProfit + c.UnitCost) AS Revenue,
-		-- Note the duplication here!
-		SUM(c.UnitCost) AS CostOfSales,
+		-- No more duplication!
+		SUM(c.UnitCost) AS CostOfGoodsSold,
 		SUM(il.Quantity * si.TypicalWeightPerUnit) AS TotalWeight
 	FROM Sales.Orders o
 		INNER JOIN Sales.Invoices i
@@ -321,18 +321,18 @@ WITH orders AS
 SELECT
 	c.CalendarYear,
 	c.CalendarMonth,
-	SUM(o.CostOfSales) AS CostOfSales,
+	SUM(o.CostOfGoodsSold) AS CostOfGoodsSold,
 	SUM(CASE WHEN o.TotalWeight <= 3 THEN 0.0 ELSE 5.0 + 0.2 * o.TotalWeight END) AS ShippingCost,
 	SUM(o.Revenue) AS Revenue,
 	SUM(CASE WHEN o.Revenue > 8000 THEN o.Revenue * 0.1 WHEN o.Revenue > 4000 THEN o.Revenue * 0.05 ELSE 0.0 END) AS DiscountAmount,
 	-- Note the duplication here!
 	SUM(o.Revenue - CASE WHEN o.Revenue > 8000 THEN o.Revenue * 0.1 WHEN o.Revenue > 4000 THEN o.Revenue * 0.05 ELSE 0.0 END) AS NetSales,
 	-- More duplication!
-	SUM(o.Revenue - CASE WHEN o.Revenue > 8000 THEN o.Revenue * 0.1 WHEN o.Revenue > 4000 THEN o.Revenue * 0.05 ELSE 0.0 END) - SUM(o.CostOfSales) AS GrossProfit,
+	SUM(o.Revenue - CASE WHEN o.Revenue > 8000 THEN o.Revenue * 0.1 WHEN o.Revenue > 4000 THEN o.Revenue * 0.05 ELSE 0.0 END) - SUM(o.CostOfGoodsSold) AS GrossProfit,
 	-- Even more duplication and getting hard to read
-	(SUM(o.Revenue - CASE WHEN o.Revenue > 8000 THEN o.Revenue * 0.1 WHEN o.Revenue > 4000 THEN o.Revenue * 0.05 ELSE 0.0 END) - SUM(o.CostOfSales)) /
+	(SUM(o.Revenue - CASE WHEN o.Revenue > 8000 THEN o.Revenue * 0.1 WHEN o.Revenue > 4000 THEN o.Revenue * 0.05 ELSE 0.0 END) - SUM(o.CostOfGoodsSold)) /
 		SUM(o.Revenue - CASE WHEN o.Revenue > 8000 THEN o.Revenue * 0.1 WHEN o.Revenue > 4000 THEN o.Revenue * 0.05 ELSE 0.0 END) AS GrossProfitMargin,
-	SUM(o.Revenue - CASE WHEN o.Revenue > 8000 THEN o.Revenue * 0.1 WHEN o.Revenue > 4000 THEN o.Revenue * 0.05 ELSE 0.0 END) - SUM(o.CostOfSales) - SUM(CASE WHEN o.TotalWeight <= 3 THEN 0.0 ELSE 5.0 + 0.2 * o.TotalWeight END) AS NetIncome
+	SUM(o.Revenue - CASE WHEN o.Revenue > 8000 THEN o.Revenue * 0.1 WHEN o.Revenue > 4000 THEN o.Revenue * 0.05 ELSE 0.0 END) - SUM(o.CostOfGoodsSold) - SUM(CASE WHEN o.TotalWeight <= 3 THEN 0.0 ELSE 5.0 + 0.2 * o.TotalWeight END) AS NetIncome
 FROM orders o
 	INNER JOIN dbo.Calendar c
 		ON o.OrderDate = c.Date
@@ -350,8 +350,7 @@ WITH orders AS
 		o.OrderID,
 		o.OrderDate,
 		SUM(il.LineProfit + c.UnitCost) AS Revenue,
-		-- Note the duplication here!
-		SUM(c.UnitCost) AS CostOfSales,
+		SUM(c.UnitCost) AS CostOfGoodsSold,
 		SUM(il.Quantity * si.TypicalWeightPerUnit) AS TotalWeight
 	FROM Sales.Orders o
 		INNER JOIN Sales.Invoices i
@@ -372,7 +371,7 @@ WITH orders AS
 SELECT
 	c.CalendarYear,
 	c.CalendarMonth,
-	SUM(o.CostOfSales) AS CostOfSales,
+	SUM(o.CostOfGoodsSold) AS CostOfGoodsSold,
 	SUM(calc.ShippingCost) AS ShippingCost,
 	SUM(o.Revenue) AS Revenue,
 	SUM(calc.DiscountAmount) AS DiscountAmount,
@@ -404,7 +403,7 @@ FROM orders o
 	CROSS APPLY
 	(
 		SELECT
-			calc2.NetSales - o.CostOfSales AS GrossProfit
+			calc2.NetSales - o.CostOfGoodsSold AS GrossProfit
 	) calc3
 GROUP BY
 	c.CalendarYear,
@@ -423,7 +422,7 @@ WITH orders AS
 		o.OrderDate,
 		SUM(il.LineProfit + (il.UnitPrice * il.Quantity)) AS Revenue,
 		-- Note the duplication here!
-		SUM(il.UnitPrice * il.Quantity) AS CostOfSales,
+		SUM(il.UnitPrice * il.Quantity) AS CostOfGoodsSold,
 		SUM(il.Quantity * si.TypicalWeightPerUnit) AS TotalWeight
 	FROM Sales.Orders o
 		INNER JOIN Sales.Invoices i
@@ -439,18 +438,18 @@ WITH orders AS
 SELECT
 	c.CalendarYear,
 	c.CalendarMonth,
-	SUM(o.CostOfSales) AS CostOfSales,
+	SUM(o.CostOfGoodsSold) AS CostOfGoodsSold,
 	SUM(CASE WHEN o.TotalWeight <= 3 THEN 0.0 ELSE 5.0 + 0.2 * o.TotalWeight END) AS ShippingCost,
 	SUM(o.Revenue) AS Revenue,
 	SUM(CASE WHEN o.Revenue > 8000 THEN o.Revenue * 0.1 WHEN o.Revenue > 4000 THEN o.Revenue * 0.05 ELSE 0.0 END) AS DiscountAmount,
 	-- Note the duplication here!
 	SUM(o.Revenue - CASE WHEN o.Revenue > 8000 THEN o.Revenue * 0.1 WHEN o.Revenue > 4000 THEN o.Revenue * 0.05 ELSE 0.0 END) AS NetSales,
 	-- More duplication!
-	SUM(o.Revenue - CASE WHEN o.Revenue > 8000 THEN o.Revenue * 0.1 WHEN o.Revenue > 4000 THEN o.Revenue * 0.05 ELSE 0.0 END) - SUM(o.CostOfSales) AS GrossProfit,
+	SUM(o.Revenue - CASE WHEN o.Revenue > 8000 THEN o.Revenue * 0.1 WHEN o.Revenue > 4000 THEN o.Revenue * 0.05 ELSE 0.0 END) - SUM(o.CostOfGoodsSold) AS GrossProfit,
 	-- Even more duplication and getting hard to read
-	(SUM(o.Revenue - CASE WHEN o.Revenue > 8000 THEN o.Revenue * 0.1 WHEN o.Revenue > 4000 THEN o.Revenue * 0.05 ELSE 0.0 END) - SUM(o.CostOfSales)) /
+	(SUM(o.Revenue - CASE WHEN o.Revenue > 8000 THEN o.Revenue * 0.1 WHEN o.Revenue > 4000 THEN o.Revenue * 0.05 ELSE 0.0 END) - SUM(o.CostOfGoodsSold)) /
 		SUM(o.Revenue - CASE WHEN o.Revenue > 8000 THEN o.Revenue * 0.1 WHEN o.Revenue > 4000 THEN o.Revenue * 0.05 ELSE 0.0 END) AS GrossProfitMargin,
-	SUM(o.Revenue - CASE WHEN o.Revenue > 8000 THEN o.Revenue * 0.1 WHEN o.Revenue > 4000 THEN o.Revenue * 0.05 ELSE 0.0 END) - SUM(o.CostOfSales) - SUM(CASE WHEN o.TotalWeight <= 3 THEN 0.0 ELSE 5.0 + 0.2 * o.TotalWeight END) AS NetIncome
+	SUM(o.Revenue - CASE WHEN o.Revenue > 8000 THEN o.Revenue * 0.1 WHEN o.Revenue > 4000 THEN o.Revenue * 0.05 ELSE 0.0 END) - SUM(o.CostOfGoodsSold) - SUM(CASE WHEN o.TotalWeight <= 3 THEN 0.0 ELSE 5.0 + 0.2 * o.TotalWeight END) AS NetIncome
 FROM orders o
 	INNER JOIN dbo.Calendar c
 		ON o.OrderDate = c.Date
@@ -467,8 +466,7 @@ WITH orders AS
 		o.OrderID,
 		o.OrderDate,
 		SUM(il.LineProfit + c.UnitCost) AS Revenue,
-		-- Note the duplication here!
-		SUM(c.UnitCost) AS CostOfSales,
+		SUM(c.UnitCost) AS CostOfGoodsSold,
 		SUM(il.Quantity * si.TypicalWeightPerUnit) AS TotalWeight
 	FROM Sales.Orders o
 		INNER JOIN Sales.Invoices i
@@ -489,7 +487,7 @@ WITH orders AS
 SELECT
 	c.CalendarYear,
 	c.CalendarMonth,
-	SUM(o.CostOfSales) AS CostOfSales,
+	SUM(o.CostOfGoodsSold) AS CostOfGoodsSold,
 	SUM(calc.ShippingCost) AS ShippingCost,
 	SUM(o.Revenue) AS Revenue,
 	SUM(calc.DiscountAmount) AS DiscountAmount,
@@ -521,7 +519,7 @@ FROM orders o
 	CROSS APPLY
 	(
 		SELECT
-			calc2.NetSales - o.CostOfSales AS GrossProfit
+			calc2.NetSales - o.CostOfGoodsSold AS GrossProfit
 	) calc3
 GROUP BY
 	c.CalendarYear,

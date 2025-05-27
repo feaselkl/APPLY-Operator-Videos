@@ -5,8 +5,7 @@ SELECT
 	o.OrderID,
 	o.OrderDate,
 	SUM(il.LineProfit + c.UnitCost) AS Revenue,
-	-- Note the duplication here!
-	SUM(c.UnitCost) AS CostOfSales,
+	SUM(c.UnitCost) AS CostOfGoodsSold,
 	SUM(il.Quantity * si.TypicalWeightPerUnit) AS TotalWeight
 FROM Sales.Orders o
 	INNER JOIN Sales.Invoices i
@@ -28,7 +27,7 @@ GROUP BY
 SELECT
 	o.OrderID,
 	o.OrderDate,
-	c.CostOfSales
+	c.CostOfGoodsSold
 FROM Sales.Orders o
 	INNER JOIN Sales.Invoices i
 		ON i.OrderID = o.OrderID
@@ -39,7 +38,7 @@ FROM Sales.Orders o
 	CROSS APPLY
 	(
 		SELECT
-			SUM(il.UnitPrice * il.Quantity) AS CostOfSales
+			SUM(il.UnitPrice * il.Quantity) AS CostOfGoodsSold
 	) c
 GROUP BY
 	o.OrderID,
@@ -88,7 +87,11 @@ FROM Sales.Orders o
 WHERE
 	c.CalendarYear = 2016
 	AND c.CalendarMonth = 9
-	AND r.rownum <= 5;
+	AND r.rownum <= 5
+ORDER BY
+	o.CustomerID,
+	o.OrderID,
+	r.rownum;
 
 -- Instead, we put it this in a CTE or subquery:
 WITH orders AS

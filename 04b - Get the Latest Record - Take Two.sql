@@ -2,6 +2,7 @@
 /* What we want:  a view to see each customer's latest transaction, including a few details
 	on the customer and the transaction. */
 
+SELECT COUNT(*) FROM Sales.CustomerTransactions;
 
 
 /* Method 1:  nested sub-query */
@@ -84,3 +85,4 @@ FROM Sales.Customers c
 			ct.TransactionDate DESC
 	) t;
 GO
+
