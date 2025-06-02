@@ -31,7 +31,30 @@ INSERT INTO #Sales
 ('P5', 125, 125, 125, 17008, 17008, 17008);
 
 -- We want to load this data into SQL Server, but we'd like to normalize it first.
--- One method we can use to do this is the CASE statement.
+-- The brute-force method is to use a UNION ALL statement.
+SELECT
+    s.Product,
+    2013,
+    Quantity2013,
+    Revenue2013
+FROM #Sales s
+UNION ALL
+SELECT
+    s.Product,
+    2014,
+    Quantity2014,
+    Revenue2014
+FROM #Sales s
+UNION ALL
+SELECT
+    s.Product,
+    2015,
+    Quantity2015,
+    Revenue2015
+FROM #Sales s;
+
+-- Another method we can use to do this is the CASE statement.
+-- We can also use a CROSS JOIN to generate the years.
 SELECT
     s.Product,
     y.[Year],
@@ -57,7 +80,7 @@ SELECT
 FROM #Sales s
     CROSS APPLY
 	(	VALUES
-        (2013, [Quantity2013], [Revenue2013]),
-        (2014, [Quantity2014], [Revenue2014]),
-        (2015, [Quantity2015], [Revenue2015])
+        (2013, s.[Quantity2013], s.[Revenue2013]),
+        (2014, s.[Quantity2014], s.[Revenue2014]),
+        (2015, s.[Quantity2015], s.[Revenue2015])
     ) y([Year], Quantity, [Revenue]);

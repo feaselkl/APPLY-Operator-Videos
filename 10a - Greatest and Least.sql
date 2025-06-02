@@ -1,7 +1,7 @@
-/* Example 10a - GREATEST and LEAST on Azure SQL DB */
+/* Example 10a - GREATEST and LEAST in SQL Server 2022 */
 /* GREATEST() and LEAST() are two interesting SQL functions.
-	At present, they are not available on SQL Server on-premises, but
-	they are just being introduced (as of December 2020) to Azure SQL Database. */
+	They became available on-premises in SQL Server 2022 and are also
+	available in Azure SQL Database. */
 
 -- Be sure to run this on a version of SQL server which supports these functions!
 SELECT

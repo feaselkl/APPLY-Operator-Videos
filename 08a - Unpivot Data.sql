@@ -9,8 +9,7 @@ WITH orders AS
 		o.OrderID,
 		o.OrderDate,
 		SUM(il.LineProfit + c.UnitCost) AS Revenue,
-		-- Note the duplication here!
-		SUM(c.UnitCost) AS CostOfSales,
+		SUM(c.UnitCost) AS CostOfGoodsSold,
 		SUM(il.Quantity * si.TypicalWeightPerUnit) AS TotalWeight
 	FROM Sales.Orders o
 		INNER JOIN Sales.Invoices i
@@ -31,7 +30,7 @@ WITH orders AS
 SELECT
 	c.CalendarYear,
 	c.CalendarMonth,
-	SUM(o.CostOfSales) AS CostOfSales,
+	SUM(o.CostOfGoodsSold) AS CostOfGoodsSold,
 	SUM(calc.ShippingCost) AS ShippingCost,
 	SUM(o.Revenue) AS Revenue,
 	SUM(calc.DiscountAmount) AS DiscountAmount,
@@ -63,7 +62,7 @@ FROM orders o
 	CROSS APPLY
 	(
 		SELECT
-			calc2.NetSales - o.CostOfSales AS GrossProfit
+			calc2.NetSales - o.CostOfGoodsSold AS GrossProfit
 	) calc3
 GROUP BY
 	c.CalendarYear,
@@ -80,8 +79,7 @@ WITH orders AS
 		o.OrderID,
 		o.OrderDate,
 		SUM(il.LineProfit + c.UnitCost) AS Revenue,
-		-- Note the duplication here!
-		SUM(c.UnitCost) AS CostOfSales,
+		SUM(c.UnitCost) AS CostOfGoodsSold,
 		SUM(il.Quantity * si.TypicalWeightPerUnit) AS TotalWeight
 	FROM Sales.Orders o
 		INNER JOIN Sales.Invoices i
@@ -105,7 +103,7 @@ pivotvals AS
 		c.CalendarYear,
 		c.CalendarMonth,
 		-- Note that we need to cast these explicitly to the same type; otherwise the query fails.
-		CAST(SUM(o.CostOfSales) AS DECIMAL(16,2)) AS CostOfSales,
+		CAST(SUM(o.CostOfGoodsSold) AS DECIMAL(16,2)) AS CostOfGoodsSold,
 		CAST(SUM(calc.ShippingCost) AS DECIMAL(16,2)) AS ShippingCost,
 		CAST(SUM(o.Revenue) AS DECIMAL(16,2)) AS Revenue,
 		CAST(SUM(calc.DiscountAmount) AS DECIMAL(16,2)) AS DiscountAmount,
@@ -137,7 +135,7 @@ pivotvals AS
 		CROSS APPLY
 		(
 			SELECT
-				calc2.NetSales - o.CostOfSales AS GrossProfit
+				calc2.NetSales - o.CostOfGoodsSold AS GrossProfit
 		) calc3
 	GROUP BY
 		c.CalendarYear,
@@ -151,7 +149,7 @@ SELECT
 FROM pivotvals p
 	UNPIVOT
 	(
-		[Value] FOR Metric IN (CostOfSales, ShippingCost, Revenue, DiscountAmount,
+		[Value] FOR Metric IN (CostOfGoodsSold, ShippingCost, Revenue, DiscountAmount,
 								NetSales, GrossProfit, GrossProfitMargin, NetIncome)
 	) u
 WHERE
@@ -167,8 +165,7 @@ WITH orders AS
 		o.OrderID,
 		o.OrderDate,
 		SUM(il.LineProfit + c.UnitCost) AS Revenue,
-		-- Note the duplication here!
-		SUM(c.UnitCost) AS CostOfSales,
+		SUM(c.UnitCost) AS CostOfGoodsSold,
 		SUM(il.Quantity * si.TypicalWeightPerUnit) AS TotalWeight
 	FROM Sales.Orders o
 		INNER JOIN Sales.Invoices i
@@ -193,7 +190,7 @@ pivotvals AS
 		c.CalendarMonth,
 		-- With APPLY, we don't need to perform explicit casts;
 		-- the values can all be implicitly converted.
-		SUM(o.CostOfSales) AS CostOfSales,
+		SUM(o.CostOfGoodsSold) AS CostOfGoodsSold,
 		SUM(calc.ShippingCost) AS ShippingCost,
 		SUM(o.Revenue) AS Revenue,
 		SUM(calc.DiscountAmount) AS DiscountAmount,
@@ -225,7 +222,7 @@ pivotvals AS
 		CROSS APPLY
 		(
 			SELECT
-				calc2.NetSales - o.CostOfSales AS GrossProfit
+				calc2.NetSales - o.CostOfGoodsSold AS GrossProfit
 		) calc3
 	GROUP BY
 		c.CalendarYear,
@@ -239,7 +236,7 @@ SELECT
 FROM pivotvals p
 	CROSS APPLY
 	(	VALUES
-		('Cost of Sales', p.CostOfSales),
+		('Cost of Sales', p.CostOfGoodsSold),
 		('Shipping Cost', p.ShippingCost),
 		('Revenue', p.Revenue),
 		('Discount Amount', p.DiscountAmount),

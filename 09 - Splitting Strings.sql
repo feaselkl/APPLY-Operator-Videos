@@ -1,9 +1,9 @@
 /* Example 9:  Splitting strings. */
 /* We need to read a delimited set of values in fixed positions.
 	This is something we would want to use APPLY or a tally table to solve.
-	With the introduction of STRING_SPLIT(), you might be tempted to use
-	that function, but it does not return things in a guaranteed order
-	and so we can't guarantee that we'll be able to pivot the data correctly. */
+	With the introduction of STRING_SPLIT(), this is much less pertinent,
+	especially if you have SQL Server 2022 or later and can include the parameter
+	specifying the original order. */
 
 CREATE TABLE #StockItems
 (
@@ -40,12 +40,35 @@ FROM Warehouse.StockItems si;
 SELECT *
 FROM #StockItems;
 
--- Option 0:  STRING_SPLIT()
+-- Option 0a:  STRING_SPLIT()
 -- This does split out into rows, but we can't pivot.
 -- It would be a much better solution if we had key-value pairs instead.
 SELECT *
 FROM #StockItems si
 	CROSS APPLY STRING_SPLIT(si.ProductFeatures, N',');
+
+-- Option 0b:  STRING_SPLIT() in 2022 or later
+-- Because we have the ordinal column, we can use this to pivot.
+SELECT *
+FROM #StockItems si
+	CROSS APPLY STRING_SPLIT(si.ProductFeatures, N',', 1);
+
+-- Now let's pivot.
+SELECT
+	si.StockItemID,
+	si.StockItemName,
+	si.SupplierID,
+	MAX(CASE WHEN ss.ordinal = 1 THEN ss.value END) AS [Brand],
+	MAX(CASE WHEN ss.ordinal = 2 THEN ss.value END) AS [Barcode],
+	MAX(CASE WHEN ss.ordinal = 3 THEN ss.value END) AS [TaxRate],
+	MAX(CASE WHEN ss.ordinal = 4 THEN ss.value END) AS [UnitPrice],
+	MAX(CASE WHEN ss.ordinal = 5 THEN ss.value END) AS [Size],
+	MAX(CASE WHEN ss.ordinal = 6 THEN ss.value END) AS [QuantityPerOuter]
+FROM #StockItems si
+	CROSS APPLY STRING_SPLIT(si.ProductFeatures, N',', 1) ss
+GROUP BY
+	si.StockItemID,
+	si.StockItemName;
 
 -- Option 1:  tally table.
 -- Tally tables are a way of unpivoting strings, typically giving
